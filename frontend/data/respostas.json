@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1,
+    "questaoId": 1,
+    "aluno": "Ana Souza",
+    "texto": "Uma causa foi a crise financeira, porque o rei gastava muito. Outra foi a desigualdade, já que o clero e a nobreza não pagavam impostos.",
+    "notaSugerida": 4,
+    "comentarioIA": "Citou e explicou as duas causas esperadas.",
+    "status": "revisada"
+  },
+  {
+    "id": 2,
+    "questaoId": 1,
+    "aluno": "Bruno Lima",
+    "texto": "A revolução aconteceu porque o povo estava com fome e com raiva do rei.",
+    "notaSugerida": 1,
+    "comentarioIA": "Mencionou a insatisfação popular, mas não explicou a crise financeira nem a desigualdade entre os Estados.",
+    "status": "pendente"
+  },
+  {
+    "id": 3,
+    "questaoId": 2,
+    "aluno": "Carla Mendes",
+    "texto": "MMC é o menor número que é múltiplo dos dois. Múltiplos de 4: 4, 8, 12. Múltiplos de 6: 6, 12. Então o MMC é 12.",
+    "notaSugerida": 3,
+    "comentarioIA": "Definiu o MMC, listou os múltiplos e chegou ao resultado correto.",
+    "status": "revisada"
+  },
+  {
+    "id": 4,
+    "questaoId": 2,
+    "aluno": "Diego Ramos",
+    "texto": "O MMC de 4 e 6 é 24 porque 4 vezes 6 da 24.",
+    "notaSugerida": 0,
+    "comentarioIA": "Confundiu o MMC com a multiplicação dos números. O menor múltiplo comum de 4 e 6 é 12.",
+    "status": "pendente"
+  },
+  {
+    "id": 5,
+    "questaoId": 3,
+    "aluno": "Eduarda Costa",
+    "texto": "No eclipse solar a Lua fica na frente do Sol e tampa a luz. No eclipse lunar é a Terra que fica no meio e a sombra dela cobre a Lua.",
+    "notaSugerida": 2,
+    "comentarioIA": "Explicou os dois eclipses com a posição correta dos astros.",
+    "status": "pendente"
+  },
+  {
+    "id": 6,
+    "questaoId": 3,
+    "aluno": "Felipe Alves",
+    "texto": "O eclipse solar é quando fica escuro de dia por causa da Lua.",
+    "notaSugerida": 1,
+    "comentarioIA": "Descreveu o eclipse solar de forma simples, mas não explicou o eclipse lunar.",
+    "status": "pendente"
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "disciplina": "História",
+    "turma": "8º ano A",
+    "enunciado": "Explique duas causas da Revolução Francesa.",
+    "respostaEsperada": "A crise financeira do Estado e a desigualdade entre os três Estados, com os privilégios do clero e da nobreza.",
+    "criterios": "Citar duas causas (1 ponto cada) e explicar cada uma (1 ponto cada).",
+    "notaMaxima": 4
+  },
+  {
+    "id": 2,
+    "disciplina": "Matemática",
+    "turma": "7º ano B",
+    "enunciado": "Explique o que é o mínimo múltiplo comum e calcule o MMC de 4 e 6, mostrando como chegou ao resultado.",
+    "respostaEsperada": "O MMC é o menor número que é múltiplo de dois ou mais números ao mesmo tempo. Múltiplos de 4: 4, 8, 12... Múltiplos de 6: 6, 12... O MMC de 4 e 6 é 12.",
+    "criterios": "Definir o MMC (1 ponto), mostrar os múltiplos (1 ponto) e chegar ao resultado correto (1 ponto).",
+    "notaMaxima": 3
+  },
+  {
+    "id": 3,
+    "disciplina": "Ciências",
+    "turma": "6º ano A",
+    "enunciado": "Explique a diferença entre o eclipse solar e o eclipse lunar.",
+    "respostaEsperada": "No eclipse solar, a Lua fica entre a Terra e o Sol e bloqueia a luz do Sol. No eclipse lunar, a Terra fica entre o Sol e a Lua, e a sombra da Terra cobre a Lua.",
+    "criterios": "Explicar o eclipse solar (1 ponto) e o eclipse lunar (1 ponto), com a posição correta dos astros.",
+    "notaMaxima": 2
+  }
+]
