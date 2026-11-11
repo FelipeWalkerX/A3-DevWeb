@@ -10,3 +10,7 @@ Siga as instruções do [backend](./backend/README.md) e do [frontend](./fronten
 
 - `backend/`: API REST FastAPI, persistência SQLite e testes.
 - `frontend/`: painel Next.js com dados carregados pela API.
+
+## API em produção
+
+https://a3-devweb.onrender.com/docs
