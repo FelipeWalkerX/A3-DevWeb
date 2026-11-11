@@ -1,8 +1,38 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import initialQuestions from "../data/questoes.json";
-import initialResponses from "../data/respostas.json";
+import { useEffect, useMemo, useState } from "react";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+async function apiRequest(path, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...options.headers,
+      },
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? ` (${error.message})` : "";
+    throw new Error(`Não foi possível conectar à API em ${API_BASE_URL}${reason}`);
+  }
+
+  if (!response.ok) {
+    const body = await response.text();
+    let detail = body;
+    try {
+      detail = JSON.parse(body).detail || body;
+    } catch {
+      detail = body;
+    }
+    throw new Error(detail || `A API respondeu com erro HTTP ${response.status}.`);
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
+}
 
 const iconPaths = {
   grid: "M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z",
@@ -74,6 +104,8 @@ function NewQuestionModal({ onClose, onCreate }) {
     notaMaxima: "4",
   });
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -81,7 +113,7 @@ function NewQuestionModal({ onClose, onCreate }) {
     setErrors((current) => ({ ...current, [name]: "" }));
   }
 
-  function submitForm(event) {
+  async function submitForm(event) {
     event.preventDefault();
     const nextErrors = {};
     ["disciplina", "turma", "enunciado", "respostaEsperada", "criterios"].forEach(
@@ -99,15 +131,24 @@ function NewQuestionModal({ onClose, onCreate }) {
       return;
     }
 
-    onCreate({
-      ...values,
-      id: `q-${Date.now()}`,
-      notaMaxima: score,
-      criterios: values.criterios
-        .split("\n")
-        .map((criterion) => criterion.trim())
-        .filter(Boolean),
-    });
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      const error = await onCreate({
+        ...values,
+        notaMaxima: score,
+        criterios: values.criterios
+          .split("\n")
+          .map((criterion) => criterion.trim())
+          .filter(Boolean),
+      });
+      if (error) setSubmitError(error);
+      else onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Não foi possível salvar a questão.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -211,10 +252,11 @@ function NewQuestionModal({ onClose, onCreate }) {
             <Icon name="sparkle" size={16} />
             A sugestão de nota sempre poderá ser revisada pelo professor.
           </div>
+          {submitError && <div className="form-error-banner" role="alert">{submitError}</div>}
           <div className="modal-actions">
             <button className="button button-quiet" onClick={onClose} type="button">Cancelar</button>
-            <button className="button button-primary" type="submit">
-              <Icon name="plus" size={17} /> Salvar questão
+            <button className="button button-primary" disabled={isSubmitting} type="submit">
+              <Icon name="plus" size={17} /> {isSubmitting ? "Salvando..." : "Salvar questão"}
             </button>
           </div>
         </form>
@@ -223,14 +265,154 @@ function NewQuestionModal({ onClose, onCreate }) {
   );
 }
 
+function NewResponseModal({ onClose, onCreate, questions }) {
+  const [values, setValues] = useState({
+    questionId: questions[0]?.id || "",
+    aluno: "",
+    resposta: "",
+  });
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function submitForm(event) {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      const error = await onCreate(values);
+      if (error) setSubmitError(error);
+      else onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Não foi possível salvar a resposta.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section
+        aria-labelledby="response-modal-title"
+        aria-modal="true"
+        className="modal-card"
+        role="dialog"
+      >
+        <div className="modal-heading">
+          <div>
+            <span className="eyebrow">NOVA RESPOSTA</span>
+            <h2 id="response-modal-title">Receba uma resposta</h2>
+            <p>A sugestão demonstrativa será gerada e salva para revisão.</p>
+          </div>
+          <button aria-label="Fechar" className="icon-button" onClick={onClose} type="button">
+            <Icon name="close" />
+          </button>
+        </div>
+        {questions.length ? (
+          <form className="question-form" onSubmit={submitForm}>
+            <label>
+              Questão
+              <select
+                onChange={(event) => setValues((current) => ({ ...current, questionId: event.target.value }))}
+                required
+                value={values.questionId}
+              >
+                {questions.map((question) => (
+                  <option key={question.id} value={question.id}>
+                    {question.disciplina} · {question.turma} — {question.enunciado}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Nome do aluno
+              <input
+                maxLength={150}
+                onChange={(event) => setValues((current) => ({ ...current, aluno: event.target.value }))}
+                required
+                value={values.aluno}
+              />
+            </label>
+            <label>
+              Resposta discursiva
+              <textarea
+                maxLength={10000}
+                onChange={(event) => setValues((current) => ({ ...current, resposta: event.target.value }))}
+                required
+                rows={5}
+                value={values.resposta}
+              />
+            </label>
+            <div className="form-note">
+              <Icon name="sparkle" size={16} />
+              A correção é simulada com os critérios da questão, não por uma IA real.
+            </div>
+            {submitError && <div className="form-error-banner" role="alert">{submitError}</div>}
+            <div className="modal-actions">
+              <button className="button button-quiet" onClick={onClose} type="button">Cancelar</button>
+              <button className="button button-primary" disabled={isSubmitting} type="submit">
+                <Icon name="sparkle" size={17} />
+                {isSubmitting ? "Gerando sugestão..." : "Salvar e corrigir"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="form-error-banner" role="alert">
+            Cadastre uma questão antes de enviar respostas.
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 export default function Home() {
-  const [questions, setQuestions] = useState(initialQuestions);
-  const [responses, setResponses] = useState(initialResponses);
-  const [activeResponseId, setActiveResponseId] = useState(initialResponses[0]?.id);
+  const [questions, setQuestions] = useState([]);
+  const [responses, setResponses] = useState([]);
+  const [activeResponseId, setActiveResponseId] = useState(null);
   const [activeFilter, setActiveFilter] = useState("Todas");
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [noticeIsError, setNoticeIsError] = useState(false);
+  const [apiState, setApiState] = useState("loading");
+  const [apiError, setApiError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadDashboard() {
+      setApiState("loading");
+      setApiError("");
+      try {
+        const [loadedQuestions, loadedResponses] = await Promise.all([
+          apiRequest("/api/questions"),
+          apiRequest("/api/responses"),
+        ]);
+        if (!isCurrent) return;
+        setQuestions(loadedQuestions);
+        setResponses(loadedResponses);
+        setActiveResponseId((current) =>
+          loadedResponses.some((response) => response.id === current)
+            ? current
+            : loadedResponses[0]?.id || null,
+        );
+        setApiState("connected");
+      } catch (error) {
+        if (!isCurrent) return;
+        setApiState("error");
+        setApiError(error instanceof Error ? error.message : "Falha ao carregar os dados da API.");
+      }
+    }
+
+    loadDashboard();
+    return () => {
+      isCurrent = false;
+    };
+  }, [reloadKey]);
 
   const questionById = useMemo(
     () => Object.fromEntries(questions.map((question) => [question.id, question])),
@@ -256,20 +438,55 @@ export default function Home() {
     return matchesStatus && matchesSearch;
   });
 
-  function createQuestion(question) {
-    setQuestions((current) => [question, ...current]);
-    setIsModalOpen(false);
-    setNotice("Questão cadastrada com sucesso. Os dados ficam disponíveis nesta demonstração.");
+  async function createQuestion(question) {
+    try {
+      const createdQuestion = await apiRequest("/api/questions", {
+        method: "POST",
+        body: JSON.stringify(question),
+      });
+      setQuestions((current) => [createdQuestion, ...current]);
+      setNotice("Questão cadastrada e salva no banco local.");
+      setNoticeIsError(false);
+      return "";
+    } catch (error) {
+      return error instanceof Error ? error.message : "Não foi possível salvar a questão.";
+    }
   }
 
-  function approveResponse() {
+  async function createResponse(response) {
+    try {
+      const createdResponse = await apiRequest("/api/responses", {
+        method: "POST",
+        body: JSON.stringify(response),
+      });
+      setResponses((current) => [createdResponse, ...current]);
+      setActiveResponseId(createdResponse.id);
+      setNotice(`Resposta de ${createdResponse.aluno} salva com sugestão demonstrativa.`);
+      setNoticeIsError(false);
+      return "";
+    } catch (error) {
+      return error instanceof Error ? error.message : "Não foi possível salvar a resposta.";
+    }
+  }
+
+  async function approveResponse() {
     if (!activeResponse) return;
-    setResponses((current) =>
-      current.map((response) =>
-        response.id === activeResponse.id ? { ...response, status: "revisada" } : response,
-      ),
-    );
-    setNotice(`Correção de ${activeResponse.aluno} marcada como revisada.`);
+    try {
+      const updatedResponse = await apiRequest(`/api/responses/${activeResponse.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "revisada" }),
+      });
+      setResponses((current) =>
+        current.map((response) =>
+          response.id === updatedResponse.id ? updatedResponse : response,
+        ),
+      );
+      setNotice(`Correção de ${updatedResponse.aluno} marcada como revisada.`);
+      setNoticeIsError(false);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível salvar a revisão.");
+      setNoticeIsError(true);
+    }
   }
 
   return (
@@ -306,7 +523,14 @@ export default function Home() {
         <header className="topbar">
           <div className="breadcrumbs">Visão geral <span>/</span> Painel</div>
           <div className="topbar-right">
-            <span className="demo-label"><span /> Ambiente de demonstração</span>
+            <span className={`demo-label api-status ${apiState}`}>
+              <span />
+              {apiState === "connected"
+                ? "API conectada"
+                : apiState === "loading"
+                  ? "Conectando à API"
+                  : "API indisponível"}
+            </span>
             <button aria-label="Ajuda" className="help-button" type="button">?</button>
           </div>
         </header>
@@ -324,11 +548,25 @@ export default function Home() {
           </div>
 
           {notice && (
-            <div className="notice-success" role="status">
-              <span className="notice-check"><Icon name="check" size={15} /></span>
+            <div className={`notice-success ${noticeIsError ? "notice-error" : ""}`} role={noticeIsError ? "alert" : "status"}>
+              <span className="notice-check"><Icon name={noticeIsError ? "close" : "check"} size={15} /></span>
               {notice}
               <button aria-label="Dispensar aviso" className="notice-close" onClick={() => setNotice("")} type="button">
                 <Icon name="close" size={16} />
+              </button>
+            </div>
+          )}
+
+          {apiState === "error" && (
+            <div className="notice-success notice-error" role="alert">
+              <span className="notice-check"><Icon name="close" size={15} /></span>
+              {apiError}
+              <button
+                className="button button-quiet retry-button"
+                onClick={() => setReloadKey((current) => current + 1)}
+                type="button"
+              >
+                Tentar novamente
               </button>
             </div>
           )}
@@ -349,15 +587,25 @@ export default function Home() {
                 </div>
                 <p>Confira a sugestão de correção e faça a revisão final.</p>
               </div>
-              <label className="search-field">
-                <Icon name="search" size={17} />
-                <input
-                  aria-label="Buscar respostas"
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar aluno ou questão"
-                  value={search}
-                />
-              </label>
+              <div className="section-tools">
+                <button
+                  className="button button-quiet new-response-button"
+                  disabled={apiState !== "connected"}
+                  onClick={() => setIsResponseModalOpen(true)}
+                  type="button"
+                >
+                  <Icon name="plus" size={16} /> Nova resposta
+                </button>
+                <label className="search-field">
+                  <Icon name="search" size={17} />
+                  <input
+                    aria-label="Buscar respostas"
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Buscar aluno ou questão"
+                    value={search}
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="filter-tabs" role="tablist" aria-label="Filtrar respostas">
@@ -379,7 +627,7 @@ export default function Home() {
             <div className="workbench">
               <div className="response-list">
                 {filteredResponses.length ? filteredResponses.map((response) => {
-                  const question = questionById[response.questaoId];
+                  const question = questionById[response.questionId];
                   if (!question) return null;
                   const isActive = response.id === activeResponseId;
                   return (
@@ -444,6 +692,10 @@ export default function Home() {
                       <button className="button button-review" onClick={approveResponse} type="button">
                         <Icon name="check" size={17} /> Marcar como revisada
                       </button>
+                    ) : apiState === "loading" ? (
+                      <div className="empty-list">
+                        <strong>Carregando respostas...</strong>
+                      </div>
                     ) : (
                       <div className="reviewed-message"><Icon name="check" size={16} /> Revisão concluída</div>
                     )}
@@ -493,6 +745,13 @@ export default function Home() {
       </main>
       {isModalOpen && (
         <NewQuestionModal onClose={() => setIsModalOpen(false)} onCreate={createQuestion} />
+      )}
+      {isResponseModalOpen && (
+        <NewResponseModal
+          onClose={() => setIsResponseModalOpen(false)}
+          onCreate={createResponse}
+          questions={questions}
+        />
       )}
     </div>
   );

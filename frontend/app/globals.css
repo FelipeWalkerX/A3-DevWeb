@@ -410,6 +410,54 @@ a {
   padding: 3px;
 }
 
+.notice-error {
+  background: #fff3f1;
+  border-color: #f0d7d3;
+  color: #a5534e;
+}
+
+.notice-error .notice-check {
+  background: #f8e2de;
+  color: #a5534e;
+}
+
+.retry-button {
+  margin-left: auto;
+  min-height: 29px;
+  white-space: nowrap;
+}
+
+.api-status.connected {
+  color: #568369;
+}
+
+.api-status.connected > span {
+  background: #69a77f;
+}
+
+.api-status.loading {
+  color: #9a7a43;
+}
+
+.api-status.loading > span {
+  animation: status-pulse 1.2s ease-in-out infinite;
+  background: #c4934b;
+}
+
+.api-status.error {
+  color: #b15d54;
+}
+
+.api-status.error > span {
+  background: #bd6258;
+}
+
+@keyframes status-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .stats-grid {
   display: grid;
   gap: 14px;
@@ -558,6 +606,23 @@ a {
 
 .search-field input::placeholder {
   color: #a3acb0;
+}
+
+.section-tools {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.new-response-button {
+  min-height: 32px;
+  white-space: nowrap;
+}
+
+.new-response-button:disabled,
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .filter-tabs {
@@ -1061,7 +1126,8 @@ a {
 }
 
 .question-form input,
-.question-form textarea {
+.question-form textarea,
+.question-form select {
   background: #fff;
   border: 1px solid #dfe5e2;
   border-radius: 5px;
@@ -1079,7 +1145,8 @@ a {
 }
 
 .question-form input:focus,
-.question-form textarea:focus {
+.question-form textarea:focus,
+.question-form select:focus {
   border-color: #7eac8c;
   box-shadow: 0 0 0 2px #edf5ef;
 }
@@ -1118,6 +1185,16 @@ a {
   display: flex;
   font-size: 9px;
   gap: 7px;
+  padding: 9px 10px;
+}
+
+.form-error-banner {
+  background: #fff3f1;
+  border: 1px solid #f0d7d3;
+  border-radius: 5px;
+  color: #a5534e;
+  font-size: 10px;
+  line-height: 1.5;
   padding: 9px 10px;
 }
 
@@ -1352,6 +1429,12 @@ a {
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .section-tools {
+    align-items: stretch;
+    flex-direction: column-reverse;
+    width: 100%;
   }
 
   .search-field {
