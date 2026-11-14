@@ -1,6 +1,9 @@
+import json
 import re
 import unicodedata
 
+from groq import Groq   #Importa a api
+from app.config import GROQ_API_KEY, GROQ_MODEL #E a chave
 
 STOP_WORDS = {
     "com",
@@ -31,7 +34,7 @@ def _terms(text: str) -> set[str]:
     }
 
 
-def suggest_correction(question: dict, answer: str) -> dict:
+def _mock_correction(question: dict, answer: str) -> dict:
     answer_terms = _terms(answer)
     matched_criteria = 0
     for criterion in question["criterios"]:
@@ -57,3 +60,38 @@ def suggest_correction(question: dict, answer: str) -> dict:
             "relacionados aos critérios. Revise a resposta antes de confirmar."
         )
     return {"nota_sugerida": score, "comentario_ia": comment, "metodo": "mock"}
+
+def _ai_correction(question: dict, answer: str) -> dict:
+    client = Groq(api_key=GROQ_API_KEY)
+    criterios = "\n".join(f"- {c}" for c in question["criterios"])
+    #O prompt é o bilhete que a ia espera, como a resposta certa, a nota maxima, etc
+    prompt = f"""Você é um assistente que ajuda um professor a corrigir questões discursivas.   
+
+Questão: {question["enunciado"]}
+Resposta esperada: {question["resposta_esperada"]}
+Critérios de correção: 
+{criterios}
+Nota máxima: {question["nota_maxima"]}
+
+Resposta do aluno: {answer}
+
+Responda só com um JSON assim: {{"nota": número de 0 até a nota máxima, "comentario": "explicação curta para o professor"}}"""
+
+    completion = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"},        #Obriga a ia a responder em JSON
+        temperature=0.2,        #Deixando a ia menos criativa e mais objetiva
+    )
+    data = json.loads(completion.choices[0].message.content)
+    nota = max(0, min(float(data["nota"]), question["nota_maxima"]))        #Garante que a nota va de 0 ate o max permitido
+    return {"nota_sugerida": round(nota, 1), "comentario_ia": data["comentario"], "metodo": "ia"}
+
+
+def suggest_correction(question: dict, answer: str) -> dict:        #Se a ia nao funcionar ou der erro, ele usa uma resposta simulada
+    if not GROQ_API_KEY:
+        return _mock_correction(question, answer)
+    try:
+        return _ai_correction(question, answer)
+    except Exception:
+        return _mock_correction(question, answer)

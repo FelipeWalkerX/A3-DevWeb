@@ -98,4 +98,4 @@ class CorrectionInput(APIModel):
 class CorrectionOut(APIModel):
     nota_sugerida: float
     comentario_ia: str
-    metodo: Literal["mock"] = "mock"
+    metodo: Literal["ia", "mock"] = "mock"

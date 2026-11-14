@@ -9,6 +9,7 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import CORS_ORIGINS;
 from app.correction import suggest_correction
 from app.database import connect, initialize_database
 from app.models import (
@@ -20,6 +21,7 @@ from app.models import (
     ResponseOut,
     ResponseStatusUpdate,
 )
+
 
 
 def _question_from_row(row: sqlite3.Row) -> dict:
@@ -59,6 +61,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type"],
 )
