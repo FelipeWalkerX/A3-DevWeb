@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
+from fastapi import HTTPException
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -154,3 +155,22 @@ def initialize_database() -> None:
                     created_at,
                 ),
             )
+
+
+def question_from_row(row: sqlite3.Row) -> dict:
+    question = dict(row)
+    question["criterios"] = json.loads(question.pop("criterios_json"))
+    return question
+
+
+def response_from_row(row: sqlite3.Row) -> dict:
+    return dict(row)
+
+
+def find_question(connection: sqlite3.Connection, question_id: str) -> dict:
+    row = connection.execute(
+        "SELECT * FROM questions WHERE id = ?", (question_id,)
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Questão não encontrada.")
+    return question_from_row(row)
