@@ -66,7 +66,7 @@ No `/docs`, faça o login, copie o `accessToken` e cole no botão **Authorize**.
   - `GROQ_API_KEY`: chave do Groq
   - `JWT_SECRET_KEY`: texto aleatório longo (`python -c "import secrets; print(secrets.token_hex(32))"`)
   - `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_NAME`: login do professor
-  - `CLAREIA_CORS_ORIGINS`: URL do site na Vercel, ex: `https://clareia.vercel.app` (várias separadas por vírgula)
+  - `CLAREIA_CORS_ORIGINS`: URL do site na Vercel, ex: `https://a3-dev-web.vercel.app` (várias separadas por vírgula)
 
 No plano gratuito o disco do Render é apagado quando o serviço reinicia, então o SQLite volta aos dados de exemplo. O banco hospedado entra na Sprint 4.
 
