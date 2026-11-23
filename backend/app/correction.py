@@ -1,9 +1,12 @@
 import json
+import logging
 import re
 import unicodedata
 
 from groq import Groq   #Importa a api
 from app.config import GROQ_API_KEY, GROQ_MODEL #E a chave
+
+logger = logging.getLogger(__name__)
 
 STOP_WORDS = {
     "com",
@@ -90,8 +93,10 @@ Responda só com um JSON assim: {{"nota": número de 0 até a nota máxima, "com
 
 def suggest_correction(question: dict, answer: str) -> dict:        #Se a ia nao funcionar ou der erro, ele usa uma resposta simulada
     if not GROQ_API_KEY:
+        logger.warning("GROQ_API_KEY não configurada, usando correção simulada.")
         return _mock_correction(question, answer)
     try:
         return _ai_correction(question, answer)
     except Exception:
+        logger.exception("Falha ao chamar o Groq, usando correção simulada.")
         return _mock_correction(question, answer)
