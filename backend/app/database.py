@@ -9,8 +9,11 @@ from typing import Iterator
 from fastapi import HTTPException
 
 
+from app.auth.security import hash_password
+from app.config import ADMIN_NAME, ADMIN_PASSWORD, ADMIN_USERNAME
+
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-REPOSITORY_DIR = BACKEND_DIR.parent
+SEED_DIR = Path(__file__).resolve().parent / "seed"
 
 
 def database_path() -> Path:
@@ -61,6 +64,21 @@ def _normalize_criteria(value: str | list[str]) -> list[str]:
     return normalized
 
 
+def _create_admin_user(connection: sqlite3.Connection) -> None:
+    #Cria o professor definido nas variaveis de ambiente, so na primeira vez
+    if find_user(connection, ADMIN_USERNAME):
+        return
+    connection.execute(
+        "INSERT INTO users (username, nome, password_hash, created_at) VALUES (?, ?, ?, ?)",
+        (
+            ADMIN_USERNAME,
+            ADMIN_NAME,
+            hash_password(ADMIN_PASSWORD),
+            datetime.now(timezone.utc).isoformat(),
+        ),
+    )
+
+
 def initialize_database() -> None:
     with connect() as connection:
         connection.executescript(
@@ -90,16 +108,24 @@ def initialize_database() -> None:
                 ON responses(question_id);
             CREATE INDEX IF NOT EXISTS responses_status_idx
                 ON responses(status);
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                nome TEXT NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
             """
         )
+        _create_admin_user(connection)
         question_count = connection.execute(
             "SELECT COUNT(*) FROM questions"
         ).fetchone()[0]
         if question_count:
             return
 
-        questions = _load_seed_file(REPOSITORY_DIR / "frontend" / "data" / "questoes.json")
-        responses = _load_seed_file(REPOSITORY_DIR / "frontend" / "data" / "respostas.json")
+        questions = _load_seed_file(SEED_DIR / "questoes.json")
+        responses = _load_seed_file(SEED_DIR / "respostas.json")
         created_at = datetime.now(timezone.utc).isoformat()
         questions_by_id = {}
         for question in questions:
@@ -174,3 +200,10 @@ def find_question(connection: sqlite3.Connection, question_id: str) -> dict:
     if row is None:
         raise HTTPException(status_code=404, detail="Questão não encontrada.")
     return question_from_row(row)
+
+
+def find_user(connection: sqlite3.Connection, username: str) -> dict | None:
+    row = connection.execute(
+        "SELECT * FROM users WHERE username = ?", (username,)
+    ).fetchone()
+    return dict(row) if row else None

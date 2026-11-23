@@ -1,40 +1,19 @@
-# Clareia — correção assistida
+# Clareia - Frontend
 
-## Descrição do sistema
-
-O Clareia apoia professores com muitas avaliações discursivas e pouco tempo para corrigi-las.
-Professores cadastram questões, respostas esperadas e critérios de avaliação.
-A plataforma persiste questões e respostas localmente e apresenta sugestões demonstrativas de nota.
-O professor revisa a sugestão e decide se a correção está adequada.
-As sugestões são simuladas e não usam uma API ou modelo de IA real.
-
-## Rodar localmente
+Site em Next.js (App Router) com Tailwind CSS. Consome a API do `backend/`. Instruções completas no [README principal](../README.md).
 
 ```bash
-# Terminal 1: API e banco SQLite
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-Em outro terminal:
-
-```bash
-cd frontend
 npm install
-npm run dev
+cp .env.example .env.local
+npm run dev      # http://localhost:3000
+npm run build    # gera a versão estática em out/
 ```
 
-Abra [http://localhost:3000](http://localhost:3000). A interface usa a API em `http://localhost:8000`; documentação interativa disponível em [http://localhost:8000/docs](http://localhost:8000/docs).
+## Páginas
 
-## Funcionalidades
+- `/login`: login do professor
+- `/dashboard`: questões e respostas (GET na API), filtro por status e revisão da nota
+- `/correcao`: envia a resposta de um aluno para a IA corrigir
+- `/questoes/nova`: cadastro de questão com resposta esperada e critérios
 
-- Listagem pesquisável de respostas, com filtros por status.
-- Visualização da resposta do estudante, critérios e sugestão de correção.
-- Cadastro persistente de questões e respostas pelo frontend.
-- Revisão persistente da sugestão pelo professor.
-- Interface responsiva com Tailwind CSS e estilos complementares.
-- Exportação estática configurada para gerar a pasta `out/` com `npm run build`.
-- Defina `NEXT_PUBLIC_API_URL` antes do build para apontar a interface estática à URL pública da API.
+As páginas do painel só abrem com login. O token fica no `localStorage` e vai no header `Authorization: Bearer` de todas as requisições (veja `services/api.js`).

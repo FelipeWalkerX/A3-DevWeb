@@ -99,3 +99,26 @@ class CorrectionOut(APIModel):
     nota_sugerida: float
     comentario_ia: str
     metodo: Literal["ia", "mock"] = "mock"
+
+
+#Autenticação
+class LoginInput(APIModel):
+    username: str = Field(min_length=1, max_length=100)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class RefreshInput(APIModel):
+    refresh_token: str = Field(min_length=1)
+
+
+class UserOut(APIModel):
+    username: str
+    nome: str
+
+
+class TokenOut(APIModel):
+    access_token: str
+    refresh_token: str | None = None
+    token_type: str = "bearer"
+    expires_in: int     #Segundos ate o access token expirar
+    usuario: UserOut
